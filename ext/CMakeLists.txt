@@ -31,11 +31,11 @@ add_library(ImGui_sdl_vulkan
 target_include_directories(ImGui_sdl_vulkan PUBLIC imgui/ imgui/examples ${SDL_INCLUDE_DIRS})
 target_link_libraries(ImGui_sdl_vulkan PUBLIC ${VULKAN_LIBRARIES} ${SDL_LIBRARIES})
 
-add_library(ImGui_cpp 
-    imgui/misc/cpp/imgui_stdlib.h
-    imgui/misc/cpp/imgui_stdlib.cpp
-    )
-target_include_directories(ImGui_cpp PUBLIC imgui/ imgui/misc/cpp/)
+#add_library(ImGui_cpp 
+#    imgui/misc/cpp/imgui_stdlib.h
+#    imgui/misc/cpp/imgui_stdlib.cpp
+#    )
+#target_include_directories(ImGui_cpp PUBLIC imgui/ imgui/misc/cpp/)
 
 add_executable(binary_to_compressed_c
     imgui/misc/fonts/binary_to_compressed_c.cpp

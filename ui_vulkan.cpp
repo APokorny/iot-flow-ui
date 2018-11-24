@@ -53,6 +53,7 @@ static void SetupVulkan(const char** extensions, uint32_t extensions_count)
         VkInstanceCreateInfo create_info = {};
         create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         create_info.enabledExtensionCount = extensions_count;
+void Application_Frame();
         create_info.ppEnabledExtensionNames = extensions;
 
 #ifdef IMGUI_VULKAN_DEBUG_REPORT
@@ -296,6 +297,9 @@ static void FramePresent(ImGui_ImplVulkanH_WindowData* wd)
     check_vk_result(err);
 }
 
+void Application_Frame();
+void Application_Initialize();
+void Application_Finalize();
 int main(int, char**)
 {
     // Setup SDL
@@ -356,6 +360,7 @@ int main(int, char**)
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
 
+    Application_Initialize();
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them. 
     // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple. 
@@ -465,6 +470,7 @@ int main(int, char**)
                 show_another_window = false;
             ImGui::End();
         }
+        Application_Frame();
 
         // Rendering
         ImGui::Render();

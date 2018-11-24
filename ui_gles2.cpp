@@ -22,6 +22,9 @@
 #include IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 #endif
 
+void Application_Frame();
+void Application_Initialize();
+void Application_Finalize();
 int main(int, char**)
 {
     // Setup SDL
@@ -83,6 +86,8 @@ int main(int, char**)
     // Setup Platform/Renderer bindings
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
+
+    Application_Initialize();
 
     // Setup Style
     ImGui::StyleColorsDark();
@@ -167,6 +172,7 @@ int main(int, char**)
                 show_another_window = false;
             ImGui::End();
         }
+        Application_Frame();
 
         // Rendering
         ImGui::Render();

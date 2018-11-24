@@ -19,3 +19,4 @@ target_include_directories(NodeEditor PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/Includ
 #target_include_directories(NodeEditor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Source/Shared)
 
 target_link_libraries(NodeEditor PUBLIC ImGui picojson)
+add_subdirectory(Shared)
