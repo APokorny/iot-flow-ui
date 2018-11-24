@@ -463,10 +463,10 @@ void ed::Pin::Draw(ImDrawList* drawList, DrawFlags flags)
 
         if (m_BorderWidth > 0.0f)
         {
-            ImGui::PushStyleVar(ImGuiStyleVar_AntiAliasFringeScale, 1.0f);
+            // ImGui::PushStyleVar(ImGuiStyleVar_AntiAliasFringeScale, 1.0f);
             drawList->AddRect(to_imvec(m_Bounds.top_left()), to_imvec(m_Bounds.bottom_right()),
                 m_BorderColor, m_Rounding, m_Corners, m_BorderWidth);
-            ImGui::PopStyleVar();
+            // ImGui::PopStyleVar();
         }
 
         if (!Editor->IsSelected(m_Node))
@@ -528,14 +528,14 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
 
             if (m_GroupBorderWidth > 0.0f)
             {
-                ImGui::PushStyleVar(ImGuiStyleVar_AntiAliasFringeScale, 1.0f);
+                // ImGui::PushStyleVar(ImGuiStyleVar_AntiAliasFringeScale, 1.0f);
 
                 drawList->AddRect(
                     to_imvec(m_GroupBounds.top_left()),
                     to_imvec(m_GroupBounds.bottom_right()),
                     m_GroupBorderColor, m_GroupRounding, 15, m_GroupBorderWidth);
 
-                ImGui::PopStyleVar();
+                // ImGui::PopStyleVar();
             }
         }
 
@@ -864,7 +864,7 @@ void ed::EditorContext::Begin(const char* id, const ImVec2& size)
 
     m_Canvas = m_NavigateAction.GetCanvas();
 
-    ImGui::PushStyleVar(ImGuiStyleVar_AntiAliasFringeScale, std::min(std::max(m_Canvas.InvZoom.x, m_Canvas.InvZoom.y), 1.0f));
+    // ImGui::PushStyleVar(ImGuiStyleVar_AntiAliasFringeScale, std::min(std::max(m_Canvas.InvZoom.x, m_Canvas.InvZoom.y), 1.0f));
     auto drawList = ImGui::GetWindowDrawList();
 
     // Save mouse positions
@@ -1175,7 +1175,7 @@ void ed::EditorContext::End()
     // ShowMetrics(control);
 
     // fringe scale
-    ImGui::PopStyleVar();
+    // ImGui::PopStyleVar(); --
 
     ImGui::EndChild();
     ImGui::PopStyleColor();
@@ -2690,7 +2690,7 @@ ed::EditorAction::AcceptResult ed::NavigateAction::Accept(const Control& control
 
     auto& io = ImGui::GetIO();
 
-    if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F)) && Editor->AreShortcutsEnabled())
+    if (ImGui::IsWindowFocused() && false /* ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F))*/ && Editor->AreShortcutsEnabled())
     {
         const auto allowZoomIn = io.KeyShift;
 
@@ -3553,9 +3553,9 @@ void ed::SelectAction::Draw(ImDrawList* drawList)
     auto max  = ImVec2(std::max(m_StartPoint.x, m_EndPoint.x), std::max(m_StartPoint.y, m_EndPoint.y));
 
     drawList->AddRectFilled(min, max, fillColor);
-    ImGui::PushStyleVar(ImGuiStyleVar_AntiAliasFringeScale, 1.0f);
+    //ImGui::PushStyleVar(ImGuiStyleVar_AntiAliasFringeScale, 1.0f);
     drawList->AddRect(min, max, outlineColor);
-    ImGui::PopStyleVar();
+    //ImGui::PopStyleVar();
 }
 
 
@@ -3731,8 +3731,8 @@ ed::EditorAction::AcceptResult ed::ShortcutAction::Accept(const Control& control
         candidateAction = Copy;
     if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_V)))
         candidateAction = Paste;
-    if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_D)))
-        candidateAction = Duplicate;
+    /*if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_D)))
+        candidateAction = Duplicate;*/
     if (!io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Space)))
         candidateAction = CreateNode;
 
@@ -4790,7 +4790,7 @@ bool ed::HintBuilder::Begin(NodeId nodeId)
     ImGui::GetWindowDrawList()->ChannelsSetCurrent(c_UserChannel_Hints);
     ImGui::PushClipRect(canvas.WindowScreenPos + ImVec2(1, 1), canvas.WindowScreenPos + canvas.WindowScreenSize - ImVec2(1, 1), false);
 
-    ImGui::PushStyleVar(ImGuiStyleVar_AntiAliasFringeScale, 1.0f);
+    //ImGui::PushStyleVar(ImGuiStyleVar_AntiAliasFringeScale, 1.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
 
     m_IsActive = true;
