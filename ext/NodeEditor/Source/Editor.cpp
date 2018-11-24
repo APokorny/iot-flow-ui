@@ -4807,7 +4807,7 @@ void ed::HintBuilder::End()
     ImGui::PopClipRect();
     //ImGui::PopStyleVar(2);
     ImGui::PopStyleVar();
-    ImGui::PopStyleVar();
+    // ImGui::PopStyleVar();
 
     Editor->Resume();
 
