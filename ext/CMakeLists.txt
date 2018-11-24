@@ -22,14 +22,16 @@ target_compile_definitions(ImGui_sdl_gl3 PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLEW=1)
 target_include_directories(ImGui_sdl_gl3 PUBLIC imgui/ imgui/examples ${SDL_INCLUDE_DIRS} ${GLEW_CLFAGS})
 target_link_libraries(ImGui_sdl_gl3 PUBLIC ${GLEW_LDFAGS} ${GLEW_LIBRARIES})
 
-add_library(ImGui_sdl_vulkan
-    imgui/examples/imgui_impl_sdl.h
-    imgui/examples/imgui_impl_vulkan.h
-    imgui/examples/imgui_impl_sdl.cpp
-    imgui/examples/imgui_impl_vulkan.cpp
-    )
-target_include_directories(ImGui_sdl_vulkan PUBLIC imgui/ imgui/examples ${SDL_INCLUDE_DIRS})
-target_link_libraries(ImGui_sdl_vulkan PUBLIC ${VULKAN_LIBRARIES} ${SDL_LIBRARIES})
+if(VULKAN_ENABLED)
+    add_library(ImGui_sdl_vulkan
+        imgui/examples/imgui_impl_sdl.h
+        imgui/examples/imgui_impl_vulkan.h
+        imgui/examples/imgui_impl_sdl.cpp
+        imgui/examples/imgui_impl_vulkan.cpp
+        )
+    target_include_directories(ImGui_sdl_vulkan PUBLIC imgui/ imgui/examples ${SDL_INCLUDE_DIRS})
+    target_link_libraries(ImGui_sdl_vulkan PUBLIC ${VULKAN_LIBRARIES} ${SDL_LIBRARIES})
+endif()
 
 #add_library(ImGui_cpp 
 #    imgui/misc/cpp/imgui_stdlib.h
