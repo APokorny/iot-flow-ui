@@ -3,6 +3,9 @@
 
 int main(){
     std::cout << "main"<<std::endl;
-    ems_init();
+    emscripten::Renderer render_it(120);
+
+    render_it.setup_renderer();
+    emscripten::SystemIntegration integration;
     std::cout << "main done."<<std::endl;
 }
