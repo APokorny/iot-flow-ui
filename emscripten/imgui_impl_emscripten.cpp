@@ -251,6 +251,8 @@ emscripten::Renderer::Renderer(int glsl_version) : glsl_version{glsl_version}
         return;
     }
     emscripten_webgl_make_context_current(context);
+    const GLubyte* glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
+    std::cout << glslVersion << std::endl;
 }
 
 emscripten::Renderer::~Renderer()
@@ -459,25 +461,67 @@ void emscripten::Renderer::cleanup_programs()
 
 emscripten::SystemIntegration::SystemIntegration()
 {
-    char const* target = "yeah";
-    void* data;
+    std::cout << "create imgui context" << std::endl;
+    ImGui::CreateContext();
+    char const* target = nullptr;  //"yeah";
+    void* data = this;
+    std::cout << "add threads" << std::endl;
     pthread_t this_thread = EM_CALLBACK_THREAD_CONTEXT_CALLING_THREAD;
-    emscripten_set_keypress_callback_on_thread(
-        target, data, true, [](int type, EmscriptenKeyboardEvent const* event, void*) -> int { return false; }, this_thread);
-    emscripten_set_keydown_callback_on_thread(
-        target, data, true, [](int type, EmscriptenKeyboardEvent const* event, void*) -> int { return false; }, this_thread);
-    emscripten_set_keyup_callback_on_thread(
-        target, data, true, [](int type, EmscriptenKeyboardEvent const* event, void*) -> int { return false; }, this_thread);
+    // emscripten_set_keypress_callback_on_thread(
+    //    target, data, true, [](int type, EmscriptenKeyboardEvent const* event, void*) -> int { return false; }, this_thread);
+    emscripten_set_keydown_callback_on_thread(target, data, true,
+                                              [](int type, EmscriptenKeyboardEvent const* event, void*) -> int {
+                                                  ImGuiIO& io = ImGui::GetIO();
+                                                  io.KeysDown[event->keyCode & 511] = 1;
+                                                  io.KeyCtrl = event->ctrlKey;
+                                                  io.KeyShift = event->shiftKey;
+                                                  io.KeyAlt = event->altKey;
+                                                  io.KeySuper = event->metaKey;
+                                                  return false;
+                                              },
+                                              this_thread);
+    emscripten_set_keyup_callback_on_thread(target, data, true,
+                                            [](int type, EmscriptenKeyboardEvent const* event, void*) -> int {
+                                                ImGuiIO& io = ImGui::GetIO();
+                                                io.KeysDown[event->keyCode & 511] = 0;
+                                                io.KeyCtrl = event->ctrlKey;
+                                                io.KeyShift = event->shiftKey;
+                                                io.KeyAlt = event->altKey;
+                                                io.KeySuper = event->metaKey;
+                                                return false;
+                                            },
+                                            this_thread);
     emscripten_set_click_callback_on_thread(target, data, true,
                                             [](int type, EmscriptenMouseEvent const* event, void*) -> int { return false; }, this_thread);
-    emscripten_set_mousedown_callback_on_thread(
-        target, data, true, [](int type, EmscriptenMouseEvent const* event, void*) -> int { return false; }, this_thread);
+    emscripten_set_mousedown_callback_on_thread(target, data, true,
+                                                [](int type, EmscriptenMouseEvent const* event, void*) -> int {
+                                                    ImGuiIO& io = ImGui::GetIO();
+                                                    io.MousePos =
+                                                        ImVec2(static_cast<float>(event->clientX), static_cast<float>(event->clientY));
+                                                    return false;
+                                                },
+                                                this_thread);
+
     emscripten_set_mouseup_callback_on_thread(target, data, true,
-                                              [](int type, EmscriptenMouseEvent const* event, void*) -> int { return false; }, this_thread);
+                                              [](int type, EmscriptenMouseEvent const* event, void*) -> int {
+                                                  ImGuiIO& io = ImGui::GetIO();
+                                                  io.MousePos =
+                                                      ImVec2(static_cast<float>(event->clientX), static_cast<float>(event->clientY));
+
+                                                  return false;
+                                              },
+                                              this_thread);
     emscripten_set_dblclick_callback_on_thread(target, data, true,
                                                [](int type, EmscriptenMouseEvent const* event, void*) -> int { return 0; }, this_thread);
     emscripten_set_mousemove_callback_on_thread(target, data, true,
-                                                [](int type, EmscriptenMouseEvent const* event, void*) -> int { return 0; }, this_thread);
+                                                [](int type, EmscriptenMouseEvent const* event, void*) -> int {
+                                                    std::cout << "Mouse move " << event->clientX << " " << event->clientY << std::endl;
+                                                    ImGuiIO& io = ImGui::GetIO();
+                                                    io.MousePos =
+                                                        ImVec2(static_cast<float>(event->clientX), static_cast<float>(event->clientY));
+                                                    return 0;
+                                                },
+                                                this_thread);
     emscripten_set_mouseenter_callback_on_thread(target, data, true,
                                                  [](int type, EmscriptenMouseEvent const* event, void*) -> int { return 0; }, this_thread);
     emscripten_set_mouseleave_callback_on_thread(target, data, true,
@@ -486,7 +530,14 @@ emscripten::SystemIntegration::SystemIntegration()
                                                 [](int type, EmscriptenMouseEvent const* event, void*) -> int { return 0; }, this_thread);
     emscripten_set_mouseout_callback_on_thread(target, data, true,
                                                [](int type, EmscriptenMouseEvent const* event, void*) -> int { return 0; }, this_thread);
-    emscripten_set_wheel_callback_on_thread(target, data, true, [](int type, EmscriptenWheelEvent const* event, void*) -> int { return 0; },
+    emscripten_set_wheel_callback_on_thread(target, data, true,
+                                            [](int type, EmscriptenWheelEvent const* event, void*) -> int {
+                                                ImGuiIO& io = ImGui::GetIO();
+                                                io.MouseWheel += event->deltaY;
+                                                io.MouseWheelH += event->deltaX;
+
+                                                return 0;
+                                            },
                                             this_thread);
     emscripten_set_resize_callback_on_thread(target, data, true, [](int type, EmscriptenUiEvent const* event, void*) -> int { return 0; },
                                              this_thread);
@@ -504,4 +555,14 @@ emscripten::SystemIntegration::SystemIntegration()
         data, true, [](int type, EmscriptenDeviceOrientationEvent const* event, void*) -> int { return 0; }, this_thread);
     emscripten_set_devicemotion_callback_on_thread(
         data, true, [](int type, EmscriptenDeviceMotionEvent const* event, void*) -> int { return 0; }, this_thread);
+}
+
+void emscripten::SystemIntegration::update_imgui_state()
+{
+    // put up the new mouse state and input state
+}
+
+void emscripten::SystemIntegration::cleanup_imgui_state()
+{
+    // put up the new mouse state and input state
 }

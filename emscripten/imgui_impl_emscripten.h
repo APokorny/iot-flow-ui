@@ -20,8 +20,8 @@ struct Renderer
     void create_font_texture();
     void cleanup_font_texture();
     void cleanup_programs();
-    int glsl_version{130};
-    std::string glsl_version_text{"#version 130"};
+    int glsl_version{300};
+    std::string glsl_version_text{"#version 100\n"};
     GLuint font_texture{0};
     GLuint shader_handle;
     GLuint vert_handle;
@@ -37,6 +37,8 @@ struct Renderer
 
 struct SystemIntegration {
     SystemIntegration();
+    void update_imgui_state();
+    void cleanup_imgui_state();
 };
 
 }  // namespace emscripten
