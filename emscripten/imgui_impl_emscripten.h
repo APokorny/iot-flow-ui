@@ -1,6 +1,7 @@
 #pragma once
 #include <GLES3/gl3.h>
 #include <string>
+#include <functional>
 
 struct ImDrawData;
 
@@ -21,7 +22,7 @@ struct Renderer
     void cleanup_font_texture();
     void cleanup_programs();
     int glsl_version{300};
-    std::string glsl_version_text{"#version 100\n"};
+    std::string glsl_version_text{"#version 300 es\n"};
     GLuint font_texture{0};
     GLuint shader_handle;
     GLuint vert_handle;
@@ -36,9 +37,12 @@ struct Renderer
 };
 
 struct SystemIntegration {
+    Renderer * renderer;
+    std::function<void()> create_ui;
     SystemIntegration();
     void update_imgui_state();
     void cleanup_imgui_state();
+    void loop();
 };
 
 }  // namespace emscripten

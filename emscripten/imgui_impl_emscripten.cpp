@@ -525,7 +525,13 @@ emscripten::SystemIntegration::SystemIntegration()
     emscripten_set_mouseenter_callback_on_thread(target, data, true,
                                                  [](int type, EmscriptenMouseEvent const* event, void*) -> int { return 0; }, this_thread);
     emscripten_set_mouseleave_callback_on_thread(target, data, true,
-                                                 [](int type, EmscriptenMouseEvent const* event, void*) -> int { return 0; }, this_thread);
+                                                 [](int type, EmscriptenMouseEvent const* event, void*) -> int {
+                                                     std::cout << "Mouse leave " << event->clientX << " " << event->clientY << std::endl;
+                                                     ImGuiIO& io = ImGui::GetIO();
+                                                     io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
+                                                     return 0;
+                                                 },
+                                                 this_thread);
     emscripten_set_mouseover_callback_on_thread(target, data, true,
                                                 [](int type, EmscriptenMouseEvent const* event, void*) -> int { return 0; }, this_thread);
     emscripten_set_mouseout_callback_on_thread(target, data, true,
@@ -555,14 +561,36 @@ emscripten::SystemIntegration::SystemIntegration()
         data, true, [](int type, EmscriptenDeviceOrientationEvent const* event, void*) -> int { return 0; }, this_thread);
     emscripten_set_devicemotion_callback_on_thread(
         data, true, [](int type, EmscriptenDeviceMotionEvent const* event, void*) -> int { return 0; }, this_thread);
+    emscripten_set_main_loop_arg(
+        [](void* arg) {
+            auto self = static_cast<emscripten::SystemIntegration*>(arg);
+            self->loop();
+        },
+        this, 60, 0);
 }
 
 void emscripten::SystemIntegration::update_imgui_state()
 {
+    ImGuiIO& io = ImGui::GetIO();
+    io.DeltaTime = 1.0f / 60.0f;
+    // get display state
     // put up the new mouse state and input state
 }
 
 void emscripten::SystemIntegration::cleanup_imgui_state()
 {
     // put up the new mouse state and input state
+}
+
+void emscripten::SystemIntegration::loop()
+{
+    update_imgui_state();
+    ImGui::NewFrame();
+    if (renderer) {
+        if (create_ui)
+            create_ui();
+        ImGui::Render();
+        renderer->render_imgui_data(*ImGui::GetDrawData());
+        renderer->finish_frame();
+    }
 }
