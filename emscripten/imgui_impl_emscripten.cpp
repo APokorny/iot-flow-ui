@@ -7,6 +7,7 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <iostream>
+#include <iomanip>
 #include <unistd.h>
 #include <vector>
 
@@ -86,6 +87,7 @@ void emscripten::Renderer::create_font_texture()
 {
     // Build texture atlas
     ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->AddFontDefault();
     unsigned char* pixels;
     int width, height;
     io.Fonts->GetTexDataAsRGBA32(
@@ -115,11 +117,12 @@ void emscripten::Renderer::render_imgui_data(ImDrawData& draw_data)
     draw_data.ScaleClipRects(io.DisplayFramebufferScale);
 
     // Backup GL state
+    auto restore_active_texture =
+        restore<GLint>(GL_ACTIVE_TEXTURE, [](GLint last_active_texture) { glActiveTexture(last_active_texture); });
+    glActiveTexture(GL_TEXTURE0);
     auto restore_vertex_buffer = restore<GLint>(GL_VERTEX_ARRAY_BINDING, [](GLint vertex_array) { glBindVertexArray(vertex_array); });
     auto restore_array_buffer =
         restore<GLint>(GL_ARRAY_BUFFER_BINDING, [](GLint last_array_buffer) { glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer); });
-    auto restore_active_texture =
-        restore<GLint>(GL_ACTIVE_TEXTURE, [](GLint last_active_texture) { glActiveTexture(last_active_texture); });
     auto restore_active_program = restore<GLint>(GL_CURRENT_PROGRAM, [](GLint last_program) { glUseProgram(last_program); });
     auto restore_texture_binding =
         restore<GLint>(GL_TEXTURE_BINDING_2D, [](GLint last_texture) { glBindTexture(GL_TEXTURE_2D, last_texture); });
@@ -151,6 +154,13 @@ void emscripten::Renderer::render_imgui_data(ImDrawData& draw_data)
     RestoreEnabled depth(GL_DEPTH_TEST);
     RestoreEnabled scissor(GL_SCISSOR_TEST);
 
+    // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled, polygon fill
+    glEnable(GL_BLEND);
+    glBlendEquation(GL_FUNC_ADD);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // non premultiplied blending
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_SCISSOR_TEST);
     // Setup viewport, orthographic projection matrix
     // Our visible imgui space lies from draw_data.DisplayPps (top left) to
     // draw_data.DisplayPos+data_data->DisplaySize (bottom right). DisplayMin
@@ -187,6 +197,7 @@ void emscripten::Renderer::render_imgui_data(ImDrawData& draw_data)
     glVertexAttribPointer(position_loc, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, pos));
     glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, uv));
     glVertexAttribPointer(color_loc, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)IM_OFFSETOF(ImDrawVert, col));
+
 
     // Draw
     ImVec2 pos = draw_data.DisplayPos;
@@ -568,13 +579,13 @@ emscripten::SystemIntegration::SystemIntegration() : create_ui{[]() {}}
             auto self = static_cast<emscripten::SystemIntegration*>(arg);
             self->loop();
         },
-        this, 60, 0);
+        this, 0, 0);
 }
 
 void emscripten::SystemIntegration::update_imgui_state()
 {
     ImGuiIO& io = ImGui::GetIO();
-    io.DeltaTime = 1.0f / 60.0f;
+    io.DeltaTime = 1.0f / 30.0f;
 
     emscripten_get_canvas_element_size("", &width, &height);
     if (width * height == 0)
