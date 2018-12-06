@@ -1,6 +1,7 @@
 #include <iostream>
 #include <memory>
 #include "imgui.h"
+#include <emscripten/html5.h>
 #include "imgui_impl_emscripten.h"
 
 void Application_Frame();
@@ -11,6 +12,7 @@ std::unique_ptr<emscripten::Renderer> render_it;
 int main()
 {
     std::cout << "main" << std::endl;
+    emscripten_set_canvas_element_size("", 1600, 1200);
     integration = std::make_unique<emscripten::SystemIntegration>();
     std::cout << "Gui created callbacks registered " << std::endl;
     std::cout << "creating renderer" << std::endl;
@@ -22,6 +24,7 @@ int main()
     std::cout << "main done." << std::endl;
 
     Application_Initialize();
+    integration->renderer = render_it.get();
     integration->create_ui = [show_demo_window = true, show_another_window = false,
                               clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f)]() mutable {
         ImGui::StyleColorsDark();

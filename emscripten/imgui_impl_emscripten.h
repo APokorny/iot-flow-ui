@@ -1,7 +1,7 @@
 #pragma once
 #include <GLES3/gl3.h>
-#include <string>
 #include <functional>
+#include <string>
 
 struct ImDrawData;
 
@@ -36,13 +36,19 @@ struct Renderer
     int color_loc;
 };
 
-struct SystemIntegration {
-    Renderer * renderer;
+struct SystemIntegration
+{
+    Renderer* renderer;
+    int width, height;
+    int mouse_status[8];
     std::function<void()> create_ui;
     SystemIntegration();
+    void loop();
+
+   private:
     void update_imgui_state();
     void cleanup_imgui_state();
-    void loop();
+    void reset_mouse_state();
 };
 
 }  // namespace emscripten

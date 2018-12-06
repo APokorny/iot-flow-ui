@@ -459,16 +459,14 @@ void emscripten::Renderer::cleanup_programs()
     shader_handle = 0;
 }
 
-emscripten::SystemIntegration::SystemIntegration()
+emscripten::SystemIntegration::SystemIntegration() : create_ui{[]() {}}
 {
     std::cout << "create imgui context" << std::endl;
     ImGui::CreateContext();
-    char const* target = nullptr;  //"yeah";
+    char const* target = nullptr;
     void* data = this;
     std::cout << "add threads" << std::endl;
     pthread_t this_thread = EM_CALLBACK_THREAD_CONTEXT_CALLING_THREAD;
-    // emscripten_set_keypress_callback_on_thread(
-    //    target, data, true, [](int type, EmscriptenKeyboardEvent const* event, void*) -> int { return false; }, this_thread);
     emscripten_set_keydown_callback_on_thread(target, data, true,
                                               [](int type, EmscriptenKeyboardEvent const* event, void*) -> int {
                                                   ImGuiIO& io = ImGui::GetIO();
@@ -494,19 +492,19 @@ emscripten::SystemIntegration::SystemIntegration()
     emscripten_set_click_callback_on_thread(target, data, true,
                                             [](int type, EmscriptenMouseEvent const* event, void*) -> int { return false; }, this_thread);
     emscripten_set_mousedown_callback_on_thread(target, data, true,
-                                                [](int type, EmscriptenMouseEvent const* event, void*) -> int {
+                                                [](int type, EmscriptenMouseEvent const* event, void* obj) -> int {
                                                     ImGuiIO& io = ImGui::GetIO();
-                                                    io.MousePos =
-                                                        ImVec2(static_cast<float>(event->clientX), static_cast<float>(event->clientY));
+                                                    SystemIntegration* self = static_cast<SystemIntegration*>(obj);
+                                                    self->mouse_status[event->button] = 1;
                                                     return false;
                                                 },
                                                 this_thread);
 
     emscripten_set_mouseup_callback_on_thread(target, data, true,
-                                              [](int type, EmscriptenMouseEvent const* event, void*) -> int {
+                                              [](int type, EmscriptenMouseEvent const* event, void* obj) -> int {
                                                   ImGuiIO& io = ImGui::GetIO();
-                                                  io.MousePos =
-                                                      ImVec2(static_cast<float>(event->clientX), static_cast<float>(event->clientY));
+                                                  SystemIntegration* self = static_cast<SystemIntegration*>(obj);
+                                                  self->mouse_status[event->button] = 2;
 
                                                   return false;
                                               },
@@ -515,10 +513,9 @@ emscripten::SystemIntegration::SystemIntegration()
                                                [](int type, EmscriptenMouseEvent const* event, void*) -> int { return 0; }, this_thread);
     emscripten_set_mousemove_callback_on_thread(target, data, true,
                                                 [](int type, EmscriptenMouseEvent const* event, void*) -> int {
-                                                    std::cout << "Mouse move " << event->clientX << " " << event->clientY << std::endl;
                                                     ImGuiIO& io = ImGui::GetIO();
                                                     io.MousePos =
-                                                        ImVec2(static_cast<float>(event->clientX), static_cast<float>(event->clientY));
+                                                        ImVec2(static_cast<float>(event->canvasX), static_cast<float>(event->canvasY));
                                                     return 0;
                                                 },
                                                 this_thread);
@@ -526,7 +523,6 @@ emscripten::SystemIntegration::SystemIntegration()
                                                  [](int type, EmscriptenMouseEvent const* event, void*) -> int { return 0; }, this_thread);
     emscripten_set_mouseleave_callback_on_thread(target, data, true,
                                                  [](int type, EmscriptenMouseEvent const* event, void*) -> int {
-                                                     std::cout << "Mouse leave " << event->clientX << " " << event->clientY << std::endl;
                                                      ImGuiIO& io = ImGui::GetIO();
                                                      io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
                                                      return 0;
@@ -545,7 +541,13 @@ emscripten::SystemIntegration::SystemIntegration()
                                                 return 0;
                                             },
                                             this_thread);
-    emscripten_set_resize_callback_on_thread(target, data, true, [](int type, EmscriptenUiEvent const* event, void*) -> int { return 0; },
+    emscripten_set_resize_callback_on_thread(target, data, true,
+                                             [](int type, EmscriptenUiEvent const* event, void* obj) -> int {
+                                                 SystemIntegration* self = static_cast<SystemIntegration*>(obj);
+                                                 self->width = event->windowInnerWidth;
+                                                 self->height = event->windowInnerHeight;
+                                                 return 0;
+                                             },
                                              this_thread);
     emscripten_set_scroll_callback_on_thread(target, data, true, [](int type, EmscriptenUiEvent const* event, void*) -> int { return 0; },
                                              this_thread);
@@ -573,24 +575,50 @@ void emscripten::SystemIntegration::update_imgui_state()
 {
     ImGuiIO& io = ImGui::GetIO();
     io.DeltaTime = 1.0f / 60.0f;
-    // get display state
+
+    emscripten_get_canvas_element_size("", &width, &height);
+    if (width * height == 0)
+    {
+        std::cout << "no frame size" << std::endl;
+        return;
+    }
+    io.DisplaySize = ImVec2(static_cast<float>(width), static_cast<float>(height));
+    io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+
     // put up the new mouse state and input state
+    io.MouseDown[0] = (mouse_status[0] != 0);
+    io.MouseDown[1] = (mouse_status[1] != 0);
+    io.MouseDown[2] = (mouse_status[2] != 0);
 }
 
 void emscripten::SystemIntegration::cleanup_imgui_state()
 {
     // put up the new mouse state and input state
+    reset_mouse_state();
 }
 
 void emscripten::SystemIntegration::loop()
 {
     update_imgui_state();
-    ImGui::NewFrame();
-    if (renderer) {
-        if (create_ui)
-            create_ui();
+    if (renderer)
+    {
+        ImGui::NewFrame();
+
+        create_ui();
+        ImGui::EndFrame();
         ImGui::Render();
         renderer->render_imgui_data(*ImGui::GetDrawData());
         renderer->finish_frame();
+
+        reset_mouse_state();
+    }
+    cleanup_imgui_state();
+}
+
+void emscripten::SystemIntegration::reset_mouse_state()
+{
+    for (auto& status : mouse_status)
+    {
+        if (status == 2) status = 0;
     }
 }
